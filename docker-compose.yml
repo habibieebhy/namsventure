@@ -1,6 +1,6 @@
 services:
   namsventure:
-    image: ${DOCKERHUB_USERNAME}/namsventure:latest
+    image: ghcr.io/habibieebhy/namsventure:latest
     container_name: namsventure
     restart: unless-stopped
 
