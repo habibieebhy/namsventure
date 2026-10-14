@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# patch backups
+.nams-backup-*/
+
+# the example settings file is safe to commit
+!.env.example
