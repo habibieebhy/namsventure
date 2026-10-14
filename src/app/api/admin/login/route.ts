@@ -1,4 +1,4 @@
-import { ADMIN_COOKIE, adminToken, isHttps, passwordMatches } from "@/lib/admin-auth";
+import { ADMIN_COOKIE, SESSION_SECONDS, adminToken, isHttps, passwordMatches } from "@/lib/admin-auth";
 
 // Relative redirects so this works behind any reverse proxy / tunnel.
 function redirect(to: string, cookie?: string) {
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     "Path=/",
     "HttpOnly",
     "SameSite=Lax",
-    `Max-Age=${60 * 60 * 24 * 30}`,
+    `Max-Age=${SESSION_SECONDS}`,
     isHttps(req) ? "Secure" : "",
   ]
     .filter(Boolean)

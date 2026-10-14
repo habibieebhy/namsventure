@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { db, hasDb } from "@/lib/db";
-import { ADMIN_COOKIE, STATUSES, isValidToken } from "@/lib/admin-auth";
+import { ADMIN_COOKIE, STATUSES, tokenExpiry } from "@/lib/admin-auth";
+import SessionTimer from "./session-timer";
 import { loadDashboard, type Dashboard, type Row } from "./queries";
 import LeadStatus from "./lead-status";
 import { gscConfigured, loadRankings, type Rankings } from "@/lib/gsc";
@@ -77,7 +78,8 @@ export default async function AdminPage({
 }) {
   const sp = await searchParams;
   const jar = await cookies();
-  const authed = isValidToken(jar.get(ADMIN_COOKIE)?.value);
+  const sessionExp = tokenExpiry(jar.get(ADMIN_COOKIE)?.value);
+  const authed = sessionExp !== null;
 
   if (!process.env.ADMIN_PASSWORD) {
     return (
@@ -134,30 +136,39 @@ export default async function AdminPage({
 
   return (
     <Shell>
-      <header className="ad-top">
+      <header className="tm-top">
         <div>
           <p className="label">NAMS Venture</p>
           <h1>Telemetry</h1>
         </div>
-        <div className="ad-topRight">
-          <span className="ad-live">
+        <div className="tm-topRight">
+          <span className="tm-live">
             <i aria-hidden="true" /> {fmt(d.live)} on site now
           </span>
-          <nav className="ad-ranges" aria-label="Date range">
+          <nav className="tm-ranges" aria-label="Date range">
             {RANGES.map((r) => (
               <a key={r.days} href={`/admin?range=${r.days}`} aria-current={r.days === days ? "page" : undefined}>
                 {r.label}
               </a>
             ))}
           </nav>
-          <form action="/api/admin/logout" method="post">
-            <button className="ad-link" type="submit">Log out</button>
+          <form action="/api/admin/logout" method="post" className="tm-session">
+            <span>
+              Logged in until{" "}
+              {new Date(sessionExp! * 1000).toLocaleTimeString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </span>
+            <button className="tm-link" type="submit">Log out</button>
+            <SessionTimer exp={sessionExp!} />
           </form>
         </div>
       </header>
 
       {/* KPIs */}
-      <section className="ad-kpis">
+      <section className="tm-kpis">
         <Kpi label="Visitors" value={fmt(cur.visitors)} now={cur.visitors} before={prev.visitors} />
         <Kpi label="Page views" value={fmt(cur.pageviews)} now={cur.pageviews} before={prev.pageviews} />
         <Kpi label="Sessions" value={fmt(cur.sessions)} now={cur.sessions} before={prev.sessions} />
@@ -184,7 +195,7 @@ export default async function AdminPage({
         <SearchRankings data={ranks} error={ranksError} configured={gscConfigured()} />
       </Panel>
 
-      <div className="ad-grid">
+      <div className="tm-grid">
         <Panel title="Where visitors come from">
           <BarList rows={d.channels.map((r) => ({ ...r, label: CHANNEL[r.label] || r.label }))} unit="visitors" />
         </Panel>
@@ -240,7 +251,7 @@ export default async function AdminPage({
         </Panel>
 
         <Panel title="Crawlers & AI bots reading the site" note="Server-side · bots don't run JavaScript, so they never count as visitors" wide>
-          <div className="ad-botKinds">
+          <div className="tm-botKinds">
             {d.botKinds.length ? (
               d.botKinds.map((k) => (
                 <div key={k.label}>
@@ -249,11 +260,11 @@ export default async function AdminPage({
                 </div>
               ))
             ) : (
-              <p className="ad-empty">No crawler visits recorded yet.</p>
+              <p className="tm-empty">No crawler visits recorded yet.</p>
             )}
           </div>
           {d.bots.length > 0 && (
-            <table className="ad-table">
+            <table className="tm-table">
               <thead>
                 <tr>
                   <th>Bot</th>
@@ -281,15 +292,15 @@ export default async function AdminPage({
         title={`Dealer enquiries · ${fmt(d.leads.length)}`}
         note={d.leadStatus.map((s) => `${s.n} ${s.label}`).join(" · ") || undefined}
         action={
-          <a className="ad-link" href="/api/admin/leads" download>
+          <a className="tm-link" href="/api/admin/leads" download>
             Download all as CSV ↓
           </a>
         }
         wide
       >
         {d.leads.length ? (
-          <div className="ad-tableWrap">
-            <table className="ad-table ad-leads">
+          <div className="tm-tableWrap">
+            <table className="tm-table tm-leads">
               <thead>
                 <tr>
                   <th>When</th>
@@ -309,7 +320,7 @@ export default async function AdminPage({
                       <strong>{l.name}</strong>
                       <br />
                       {l.shop}
-                      {l.message && <span className="ad-msg">&ldquo;{l.message}&rdquo;</span>}
+                      {l.message && <span className="tm-msg">&ldquo;{l.message}&rdquo;</span>}
                     </td>
                     <td>{l.town}</td>
                     <td className="nowrap">
@@ -330,7 +341,7 @@ export default async function AdminPage({
             </table>
           </div>
         ) : (
-          <p className="ad-empty">No enquiries in this period yet.</p>
+          <p className="tm-empty">No enquiries in this period yet.</p>
         )}
       </Panel>
     </Shell>
@@ -350,12 +361,12 @@ function when(d: Date | string) {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <main className="ad">{children}</main>;
+  return <main className="tm">{children}</main>;
 }
 
 function Notice({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="ad-notice">
+    <div className="tm-notice">
       <p className="label">Telemetry</p>
       <h1>{title}</h1>
       <p>{children}</p>
@@ -366,14 +377,14 @@ function Notice({ title, children }: { title: string; children: React.ReactNode 
 function Login({ failed }: { failed: boolean }) {
   return (
     <Shell>
-      <form className="ad-login" action="/api/admin/login" method="post">
+      <form className="tm-login" action="/api/admin/login" method="post">
         <p className="label">NAMS Venture</p>
         <h1>Telemetry</h1>
         <label>
           <span>Password</span>
           <input type="password" name="password" required autoFocus autoComplete="current-password" />
         </label>
-        {failed && <p className="ad-err" role="alert">Wrong password.</p>}
+        {failed && <p className="tm-err" role="alert">Wrong password.</p>}
         <button className="btn btnSolid" type="submit">
           Open dashboard
         </button>
@@ -396,8 +407,8 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className={wide ? "ad-panel wide" : "ad-panel"}>
-      <div className="ad-panelHead">
+    <section className={wide ? "tm-panel wide" : "tm-panel"}>
+      <div className="tm-panelHead">
         <div>
           <h2>{title}</h2>
           {note && <p>{note}</p>}
@@ -426,21 +437,21 @@ function Kpi({
   strong?: boolean;
   hideDelta?: boolean;
 }) {
-  let delta: React.ReactNode = <span className="ad-delta">no earlier data</span>;
+  let delta: React.ReactNode = <span className="tm-delta">no earlier data</span>;
   if (!hideDelta && before > 0) {
     const ch = (now - before) / before;
     const up = ch >= 0;
     const good = invert ? !up : up;
     delta = (
-      <span className={`ad-delta ${Math.abs(ch) < 0.005 ? "" : good ? "good" : "bad"}`}>
+      <span className={`tm-delta ${Math.abs(ch) < 0.005 ? "" : good ? "good" : "bad"}`}>
         {up ? "▲" : "▼"} {Math.abs(ch * 100).toFixed(0)}% vs previous
       </span>
     );
   } else if (hideDelta) {
-    delta = <span className="ad-delta">chatgpt · perplexity · gemini</span>;
+    delta = <span className="tm-delta">chatgpt · perplexity · gemini</span>;
   }
   return (
-    <div className={strong ? "ad-kpi strong" : "ad-kpi"}>
+    <div className={strong ? "tm-kpi strong" : "tm-kpi"}>
       <span className="label">{label}</span>
       <strong>{value}</strong>
       {delta}
@@ -461,16 +472,16 @@ function BarList({
   share?: boolean;
   empty?: string;
 }) {
-  if (!rows.length) return <p className="ad-empty">{empty}</p>;
+  if (!rows.length) return <p className="tm-empty">{empty}</p>;
   const max = Math.max(...rows.map((r) => r.n), 1);
   const sum = total || rows.reduce((a, r) => a + r.n, 0) || 1;
   return (
-    <ul className="ad-bars">
+    <ul className="tm-bars">
       {rows.map((r) => (
         <li key={r.label} title={`${r.label}: ${fmt(r.n)} ${unit}`}>
-          <span className="ad-barFill" style={{ width: `${(r.n / (share ? sum : max)) * 100}%` }} />
-          <span className="ad-barLabel">{r.label}</span>
-          <span className="ad-barVal">
+          <span className="tm-barFill" style={{ width: `${(r.n / (share ? sum : max)) * 100}%` }} />
+          <span className="tm-barLabel">{r.label}</span>
+          <span className="tm-barVal">
             {fmt(r.n)}
             <small>{pct(r.n / sum)}</small>
           </span>
@@ -482,17 +493,17 @@ function BarList({
 
 function Funnel({ rows }: { rows: Row[] }) {
   const top = rows[0]?.n || 0;
-  if (!top) return <p className="ad-empty">No sessions yet.</p>;
+  if (!top) return <p className="tm-empty">No sessions yet.</p>;
   return (
-    <ol className="ad-funnel">
+    <ol className="tm-funnel">
       {rows.map((r, i) => {
         const prevN = i ? rows[i - 1].n : r.n;
         return (
           <li key={r.label}>
-            <div className="ad-funnelBar">
+            <div className="tm-funnelBar">
               <span style={{ height: `${Math.max((r.n / top) * 100, r.n ? 2 : 0)}%` }} />
             </div>
-            <div className="ad-funnelText">
+            <div className="tm-funnelText">
               <span>{r.label}</span>
               <strong>{fmt(r.n)}</strong>
               <small>
@@ -509,13 +520,13 @@ function Funnel({ rows }: { rows: Row[] }) {
 function Vitals({ rows }: { rows: Dashboard["vitals"] }) {
   const order = ["LCP", "INP", "CLS", "FCP", "TTFB"];
   return (
-    <div className="ad-vitals">
+    <div className="tm-vitals">
       {order.map((k) => {
         const spec = VITAL[k];
         const v = rows.find((r) => r.name === k);
         if (!v) {
           return (
-            <div key={k} className="ad-vital">
+            <div key={k} className="tm-vital">
               <span className="label">{k}</span>
               <strong>—</strong>
               <small>{spec.label}</small>
@@ -531,7 +542,7 @@ function Vitals({ rows }: { rows: Dashboard["vitals"] }) {
               ? `${(v.p75 / spec.scale).toFixed(2)}${spec.unit}`
               : `${Math.round(v.p75)}${spec.unit}`;
         return (
-          <div key={k} className={`ad-vital ${rating}`}>
+          <div key={k} className={`tm-vital ${rating}`}>
             <span className="label">{k}</span>
             <strong>{shown}</strong>
             <small>{spec.label}</small>
@@ -560,15 +571,15 @@ function DailyChart({ data }: { data: Dashboard["daily"] }) {
   const ticks = n <= 1 ? [0] : [0, Math.floor((n - 1) / 2), n - 1];
   const total = data.reduce((a, d) => a + d.visitors, 0);
 
-  if (!total) return <p className="ad-empty">No visits recorded yet. Open the site in another tab to see the first one land.</p>;
+  if (!total) return <p className="tm-empty">No visits recorded yet. Open the site in another tab to see the first one land.</p>;
 
   return (
-    <div className="ad-chart">
+    <div className="tm-chart">
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={`Visitors per day, peak ${max}`}>
         {[0.5, 1].map((f) => (
-          <line key={f} x1={pad.l} x2={W - pad.r} y1={y(max * f)} y2={y(max * f)} className="ad-grid-line" />
+          <line key={f} x1={pad.l} x2={W - pad.r} y1={y(max * f)} y2={y(max * f)} className="tm-grid-line" />
         ))}
-        <line x1={pad.l} x2={W - pad.r} y1={H - pad.b} y2={H - pad.b} className="ad-axis" />
+        <line x1={pad.l} x2={W - pad.r} y1={H - pad.b} y2={H - pad.b} className="tm-axis" />
         {data.map((d, i) => {
           const x = pad.l + i * slot + gap / 2;
           const top = y(d.visitors);
@@ -578,24 +589,24 @@ function DailyChart({ data }: { data: Dashboard["daily"] }) {
             ? `M${x},${H - pad.b} V${top + r} Q${x},${top} ${x + r},${top} H${x + bw - r} Q${x + bw},${top} ${x + bw},${top + r} V${H - pad.b} Z`
             : "";
           return (
-            <g key={d.day} className="ad-col">
+            <g key={d.day} className="tm-col">
               <title>{`${label(d.day)} · ${d.visitors} visitors · ${d.pageviews} page views · ${d.leads} enquiries`}</title>
-              <rect x={pad.l + i * slot} y={pad.t} width={slot} height={H - pad.t - pad.b} className="ad-hit" />
-              {path && <path d={path} className="ad-bar" />}
-              {d.leads > 0 && <circle cx={x + bw / 2} cy={top - 9} r={4} className="ad-leadDot" />}
+              <rect x={pad.l + i * slot} y={pad.t} width={slot} height={H - pad.t - pad.b} className="tm-hit" />
+              {path && <path d={path} className="tm-bar" />}
+              {d.leads > 0 && <circle cx={x + bw / 2} cy={top - 9} r={4} className="tm-leadDot" />}
             </g>
           );
         })}
       </svg>
-      <div className="ad-xaxis">
+      <div className="tm-xaxis">
         {ticks.map((i) => (
           <span key={i} style={{ left: `${((i + 0.5) / n) * 100}%` }}>
             {label(data[i].day)}
           </span>
         ))}
       </div>
-      <p className="ad-chartKey">
-        Peak {fmt(max)} visitors/day · <i className="ad-keyDot" aria-hidden="true" /> day with an enquiry
+      <p className="tm-chartKey">
+        Peak {fmt(max)} visitors/day · <i className="tm-keyDot" aria-hidden="true" /> day with an enquiry
       </p>
     </div>
   );
@@ -612,7 +623,7 @@ function SearchRankings({
 }) {
   if (!configured) {
     return (
-      <div className="ad-setup">
+      <div className="tm-setup">
         <p>Not connected yet. To see the searches you rank for:</p>
         <ol>
           <li>
@@ -632,46 +643,46 @@ function SearchRankings({
       </div>
     );
   }
-  if (error || !data) return <p className="ad-empty">Couldn&rsquo;t load Search Console: {error || "unknown error"}</p>;
+  if (error || !data) return <p className="tm-empty">Couldn&rsquo;t load Search Console: {error || "unknown error"}</p>;
 
   const { totals: t, prev: p } = data;
   const change = (now: number, before: number, lowerIsBetter = false) => {
-    if (!before) return <span className="ad-delta">no earlier data</span>;
+    if (!before) return <span className="tm-delta">no earlier data</span>;
     const ch = (now - before) / before;
     const good = lowerIsBetter ? ch <= 0 : ch >= 0;
     return (
-      <span className={`ad-delta ${Math.abs(ch) < 0.005 ? "" : good ? "good" : "bad"}`}>
+      <span className={`tm-delta ${Math.abs(ch) < 0.005 ? "" : good ? "good" : "bad"}`}>
         {ch >= 0 ? "▲" : "▼"} {Math.abs(ch * 100).toFixed(0)}% vs previous
       </span>
     );
   };
 
   return (
-    <div className="ad-ranks">
-      <div className="ad-kpis ad-kpis4">
-        <div className="ad-kpi">
+    <div className="tm-ranks">
+      <div className="tm-kpis tm-kpis4">
+        <div className="tm-kpi">
           <span className="label">Clicks from Google</span>
           <strong>{fmt(t.clicks)}</strong>
           {change(t.clicks, p.clicks)}
         </div>
-        <div className="ad-kpi">
+        <div className="tm-kpi">
           <span className="label">Impressions</span>
           <strong>{fmt(t.impressions)}</strong>
           {change(t.impressions, p.impressions)}
         </div>
-        <div className="ad-kpi">
+        <div className="tm-kpi">
           <span className="label">Click-through rate</span>
           <strong>{pct(t.ctr)}</strong>
           {change(t.ctr, p.ctr)}
         </div>
-        <div className="ad-kpi">
+        <div className="tm-kpi">
           <span className="label">Average position</span>
           <strong>{t.position ? t.position.toFixed(1) : "—"}</strong>
           {change(t.position, p.position, true)}
         </div>
       </div>
 
-      <div className="ad-botKinds">
+      <div className="tm-botKinds">
         {data.buckets.map((b) => (
           <div key={b.label}>
             <strong>{fmt(b.n)}</strong>
@@ -681,8 +692,8 @@ function SearchRankings({
       </div>
 
       {data.queries.length ? (
-        <div className="ad-tableWrap">
-          <table className="ad-table">
+        <div className="tm-tableWrap">
+          <table className="tm-table">
             <thead>
               <tr>
                 <th>Search query</th>
@@ -697,7 +708,7 @@ function SearchRankings({
                 <tr key={q.label}>
                   <td>{q.label}</td>
                   <td className="num">
-                    <span className={`ad-pos ${q.position <= 3 ? "top" : q.position <= 10 ? "p1" : ""}`}>
+                    <span className={`tm-pos ${q.position <= 3 ? "top" : q.position <= 10 ? "p1" : ""}`}>
                       {q.position.toFixed(1)}
                     </span>
                   </td>
@@ -710,7 +721,7 @@ function SearchRankings({
           </table>
         </div>
       ) : (
-        <p className="ad-empty">
+        <p className="tm-empty">
           No search data yet. New sites usually start showing queries 1–4 weeks after Search Console verification.
         </p>
       )}

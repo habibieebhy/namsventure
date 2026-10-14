@@ -31,7 +31,7 @@ export default function LeadStatus({
   }
 
   return (
-    <span className="ad-status">
+    <span className="tm-status">
       <select
         value={value}
         onChange={(e) => change(e.target.value)}
