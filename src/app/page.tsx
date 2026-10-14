@@ -428,6 +428,9 @@ export default function Home() {
         <div className="footerRow footerSmall">
           <span>© 2026 NAMS Venture. All rights reserved.</span>
           <span>Brand names belong to their respective owners.</span>
+          <a href="https://brixta.site/" target="_blank" rel="noopener" data-track="brixta_credit">
+            Built by BRIXTA Corporation ↗
+          </a>
         </div>
       </footer>
     </main>
