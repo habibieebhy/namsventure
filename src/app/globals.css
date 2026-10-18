@@ -18,6 +18,32 @@
   --detail: #A7B4A7;
 }
 
+/* SIGNAL — the same calm greys, with one loud red that does the pointing.
+   Red is used only where the eye should land: highlights, actions,
+   packing tape, progress, active states. Everything else stays quiet. */
+/* BLAZE — signal, turned all the way up: whole sections go red. */
+[data-palette="blaze"] {
+  --bg: #F7F6F2;
+  --bg-2: #E4E2DC;
+  --hi: #E10600;
+  --ink: #1E1E1E;
+  --detail: #E10600;
+  --red: #E10600;
+  --red-deep: #B80500;
+  --on-red: #FFFFFF;
+}
+
+[data-palette="signal"] {
+  --bg: #F7F6F2;
+  --bg-2: #E4E2DC;
+  --hi: #E10600;
+  --ink: #1E1E1E;
+  --detail: #E10600;
+  --red: #E10600;
+  --red-deep: #B80500;
+  --on-red: #FFFFFF;
+}
+
 [data-palette="bolder"] {
   --bg: #F4F4F0;
   --bg-2: #D8D8D2;
@@ -1293,4 +1319,231 @@ details[open] .faqIcon::after {
   .faqList details p {
     padding: 0 0 22px 40px;
   }
+}
+
+
+/* ------------------------------------------------------------
+   SIGNAL accents — only apply when data-palette="signal"
+------------------------------------------------------------- */
+:is([data-palette="signal"], [data-palette="blaze"]) ::selection {
+  background: var(--red);
+  color: var(--on-red);
+}
+
+/* Primary action: solid red, ink on hover */
+:is([data-palette="signal"], [data-palette="blaze"]) .btnSolid {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--on-red);
+}
+:is([data-palette="signal"], [data-palette="blaze"]) .btnSolid:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+:is([data-palette="signal"], [data-palette="blaze"]) .btn:not(.btnSolid):hover {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--on-red);
+}
+:is([data-palette="signal"], [data-palette="blaze"]) .navCta {
+  color: var(--red);
+}
+:is([data-palette="signal"], [data-palette="blaze"]) .navCta .arrow {
+  color: var(--red);
+}
+:is([data-palette="signal"], [data-palette="blaze"]) .navLinks a::after {
+  background: var(--red);
+}
+
+/* Packing tape on the cartons: proper red tape across grey boxes */
+:is([data-palette="signal"], [data-palette="blaze"]) .tape {
+  opacity: 1;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 9px, rgba(255, 255, 255, 0.16) 9px 10px),
+    var(--red);
+  border-left: 1px solid var(--red-deep);
+  border-right: 1px solid var(--red-deep);
+}
+
+/* Ticker: red separators */
+:is([data-palette="signal"], [data-palette="blaze"]) .tickerTrack i {
+  color: var(--red);
+}
+
+/* Dark sections: red reads brightest against ink */
+:is([data-palette="signal"], [data-palette="blaze"]) .range em,
+:is([data-palette="signal"], [data-palette="blaze"]) .panel li:hover::after {
+  color: var(--red);
+}
+:is([data-palette="signal"], [data-palette="blaze"]) .range {
+  border-top: 6px solid var(--red);
+}
+
+/* Process: red progress line, red number on the step you're on */
+:is([data-palette="signal"], [data-palette="blaze"]) .steps::after {
+  background: var(--red);
+  width: 2px;
+}
+:is([data-palette="signal"], [data-palette="blaze"]) .steps li:hover .stepNum,
+:is([data-palette="signal"], [data-palette="blaze"]) .steps li:first-child .stepNum {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--on-red);
+}
+
+/* Reach: state badges in red */
+:is([data-palette="signal"], [data-palette="blaze"]) .stateList li em {
+  background: var(--red);
+  color: var(--on-red);
+}
+
+/* Dealer form chips */
+:is([data-palette="signal"], [data-palette="blaze"]) .chip.on {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--on-red);
+}
+:is([data-palette="signal"], [data-palette="blaze"]) .chip:hover {
+  border-color: var(--red);
+}
+
+/* FAQ plus sign turns red when open */
+:is([data-palette="signal"], [data-palette="blaze"]) details[open] .faqIcon::before,
+:is([data-palette="signal"], [data-palette="blaze"]) details[open] .faqIcon::after {
+  background: var(--red);
+}
+
+/* Footer: red rule on top, red hover, red full stop on the wordmark */
+:is([data-palette="signal"], [data-palette="blaze"]) .footer {
+  border-top: 6px solid var(--red);
+}
+:is([data-palette="signal"], [data-palette="blaze"]) .footerRow a:hover {
+  color: var(--red);
+}
+:is([data-palette="signal"], [data-palette="blaze"]) .wordmark::after {
+  content: ".";
+  color: var(--red);
+}
+
+
+/* ------------------------------------------------------------
+   BLAZE — aggressive red. Only when data-palette="blaze".
+------------------------------------------------------------- */
+[data-palette="blaze"] {
+  --line: color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+/* Nav: red brand mark, red bar under the header */
+[data-palette="blaze"] .brand {
+  color: var(--red);
+}
+[data-palette="blaze"] .brand span {
+  color: var(--ink);
+}
+[data-palette="blaze"] .label {
+  color: var(--red);
+}
+
+/* Hero: red rule under the meta line, every carton gets a red side */
+[data-palette="blaze"] .heroMeta {
+  border-bottom: 3px solid var(--red);
+}
+[data-palette="blaze"] .cartonInner {
+  border-color: var(--ink);
+  box-shadow: 6px 6px 0 var(--red);
+}
+[data-palette="blaze"] .cartonLabel {
+  border-color: var(--red);
+}
+
+/* Ticker: a full red band, white type */
+[data-palette="blaze"] .ticker {
+  background: var(--red);
+  color: var(--on-red);
+  border-color: var(--red);
+}
+[data-palette="blaze"] .tickerTrack i {
+  color: var(--ink);
+}
+
+/* Statement: a solid red slab, words light up in white */
+[data-palette="blaze"] .statement {
+  background: var(--red);
+  color: var(--on-red);
+}
+[data-palette="blaze"] .statement .label {
+  color: color-mix(in srgb, var(--on-red) 75%, transparent);
+}
+
+/* Range stays black, red does the shouting inside it */
+[data-palette="blaze"] .range .label {
+  color: var(--red);
+}
+[data-palette="blaze"] .panel {
+  border-color: color-mix(in srgb, var(--red) 55%, transparent);
+}
+[data-palette="blaze"] .panel h3 {
+  color: var(--on-red);
+}
+
+/* Brands: the brand name itself in red */
+[data-palette="blaze"] .brandList {
+  color: var(--red);
+}
+
+/* Process: every step number solid red */
+[data-palette="blaze"] .stepNum {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--on-red);
+}
+[data-palette="blaze"] .steps h3 {
+  color: var(--ink);
+}
+
+/* Reach: the giant 08 in red */
+[data-palette="blaze"] .reachBig span {
+  color: var(--red);
+}
+[data-palette="blaze"] .stateList {
+  border-top: 3px solid var(--red);
+}
+[data-palette="blaze"] .stateList li:hover {
+  color: var(--red);
+}
+
+/* FAQ: red numbers, red open question */
+[data-palette="blaze"] .faqNum {
+  color: var(--red);
+}
+[data-palette="blaze"] details[open] summary {
+  color: var(--red);
+}
+
+/* Dealers: flip to black so the red button and chips blaze */
+[data-palette="blaze"] .dealers {
+  --bg: #1E1E1E;
+  --ink: #F7F6F2;
+  --line: color-mix(in srgb, #F7F6F2 26%, transparent);
+  --muted: color-mix(in srgb, #F7F6F2 66%, transparent);
+  background: var(--bg);
+  color: var(--ink);
+  border-top: 6px solid var(--red);
+}
+[data-palette="blaze"] .dealers .label {
+  color: var(--red);
+}
+
+/* Footer: fully red, black wordmark */
+[data-palette="blaze"] .footer {
+  background: var(--red);
+  color: var(--on-red);
+  border-top: 0;
+}
+[data-palette="blaze"] .wordmark::after {
+  color: var(--ink);
+}
+[data-palette="blaze"] .footerRow a:hover {
+  color: var(--ink);
 }

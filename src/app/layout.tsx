@@ -80,7 +80,7 @@ export const viewport: Viewport = {
 };
 
 /*
-  Colour scheme: change data-palette below to "balanced", "minimal" or "bolder".
+  Colour scheme: change data-palette below to "blaze", "signal", "balanced", "minimal" or "bolder".
   The three palettes live at the top of globals.css.
 */
 export default function RootLayout({
@@ -91,7 +91,7 @@ export default function RootLayout({
   return (
     <html
       lang="en-IN"
-      data-palette="balanced"
+      data-palette="blaze"
       className={`${archivo.variable} ${plexMono.variable}`}
     >
       <body>{children}</body>
