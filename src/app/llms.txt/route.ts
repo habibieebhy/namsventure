@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { logBotHit } from "@/lib/bot-log";
-import { CATEGORIES, FAQ, SITE, STATES, isPlaceholder } from "@/lib/site";
+import { FAQ, SITE, STATES, isPlaceholder } from "@/lib/site";
+import { getContent } from "@/lib/content";
 
 /*
   /llms.txt — a plain-text brief written for AI assistants
@@ -10,6 +11,8 @@ import { CATEGORIES, FAQ, SITE, STATES, isPlaceholder } from "@/lib/site";
 export async function GET(req: Request) {
   const ua = req.headers.get("user-agent") || "";
   after(() => logBotHit(ua, "/llms.txt"));
+
+  const CATEGORIES = (await getContent()).categories;
 
   const contact = [
     !isPlaceholder(SITE.phone) && `- Phone: ${SITE.phone}`,
@@ -32,7 +35,7 @@ export async function GET(req: Request) {
 - Website: ${SITE.url}
 
 ## Product categories
-${CATEGORIES.map((c) => `- ${c.name}: ${c.items.join(", ")}`).join("\n")}
+${CATEGORIES.map((c) => `- ${c.name}: ${c.items.map((i) => i.name).join(", ")}`).join("\n")}
 
 ## How to buy
 Retailers submit the dealer enquiry form or call. NAMS Venture confirms stock, price and dispatch date the same day, delivers from its own warehouse with a GST invoice, and routes warranty claims to the brand's authorised service network.

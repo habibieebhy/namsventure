@@ -145,6 +145,10 @@ export default async function AdminPage({
           <span className="tm-live">
             <i aria-hidden="true" /> {fmt(d.live)} on site now
           </span>
+          <nav className="tm-ranges" aria-label="Admin">
+            <a href="/admin" aria-current="page">Telemetry</a>
+            <a href="/admin/content">Edit content</a>
+          </nav>
           <nav className="tm-ranges" aria-label="Date range">
             {RANGES.map((r) => (
               <a key={r.days} href={`/admin?range=${r.days}`} aria-current={r.days === days ? "page" : undefined}>

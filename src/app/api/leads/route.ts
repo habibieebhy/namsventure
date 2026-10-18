@@ -1,14 +1,14 @@
 import { db, hasDb } from "@/lib/db";
-import { CATEGORIES } from "@/lib/site";
+import { getContent } from "@/lib/content";
 import { channelOf, clip, hostOf, ipHash, isOwnHost, visitorId } from "@/lib/telemetry";
 
-const ALLOWED = new Set(CATEGORIES.map((c) => c.name));
 
 function json(data: unknown, status = 200) {
   return Response.json(data, { status });
 }
 
 export async function POST(req: Request) {
+  const ALLOWED = new Set((await getContent()).categories.map((c) => c.name));
   let b: Record<string, unknown>;
   try {
     b = await req.json();

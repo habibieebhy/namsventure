@@ -1547,3 +1547,39 @@ details[open] .faqIcon::after {
 [data-palette="blaze"] .footerRow a:hover {
   color: var(--ink);
 }
+
+/* ------------------------------------------------------------
+   Product images (uploaded in Telemetry → Content)
+------------------------------------------------------------- */
+.panelShots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+  position: relative;
+  z-index: 1;
+}
+.panelShots img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  padding: 8px;
+  background: color-mix(in srgb, var(--bg) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bg) 16%, transparent);
+}
+.panelShots img:only-child {
+  grid-column: 1 / -1;
+  aspect-ratio: 16 / 9;
+}
+.panel li.hasImg {
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+}
+.panel li img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex: none;
+  background: color-mix(in srgb, var(--bg) 10%, transparent);
+}

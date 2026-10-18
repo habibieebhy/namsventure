@@ -72,6 +72,24 @@ alter table nams.bot_hits enable row level security;
 alter table nams.leads    enable row level security;
 `;
 
+/* Editable content + uploaded images (Telemetry → Content). */
+export const CONTENT_SQL = `
+create table if not exists nams.content (
+  key        text primary key,
+  value      jsonb not null,
+  updated_at timestamptz not null default now()
+);
+create table if not exists nams.media (
+  id         bigserial primary key,
+  mime       text not null,
+  bytes      bytea not null,
+  name       text,
+  created_at timestamptz not null default now()
+);
+alter table nams.content enable row level security;
+alter table nams.media   enable row level security;
+`;
+
 type G = { _namsPool?: Pool; _namsReady?: Promise<void> };
 const g = globalThis as unknown as G;
 
@@ -93,7 +111,7 @@ export async function db(): Promise<Pool> {
   }
   if (!g._namsReady) {
     g._namsReady = g._namsPool
-      .query(SCHEMA_SQL)
+      .query(SCHEMA_SQL + CONTENT_SQL)
       .then(() => undefined)
       .catch((e) => {
         g._namsReady = undefined;
